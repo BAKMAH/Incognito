@@ -1,4 +1,4 @@
-Obj-m := rooty.o
+Obj-m := incognito.o
 KERNEL_DIR = /lib/modules/$(shell uname -r)/build
 PWD = $(shell PWD)
 all:
