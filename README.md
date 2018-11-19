@@ -15,4 +15,4 @@ This basic rootkit works on the Linux operating system and is a loadable kernel 
   - Protect against being unloaded by the user
   - Disable the unload protection
 
-#Resources
+# Resources
