@@ -1,0 +1,11 @@
+
+#define CFG_PASS "to do evil"
+#define CFG_ROOT "root"
+#define CFG_PID_HIDE "hidepid"
+#define CFG_PID_UNHIDE "unhidepid"
+#define CFG_FILE_HIDE "hidefile"
+#define CFG_FILE_UNHIDE "unhidefile"
+#define CFG_HIDE "hide"
+#define CFG_REVEAL "reveal"
+#define CFG_PROTECT "protect"
+#define CFG_UNPROTECT "unprotect"
