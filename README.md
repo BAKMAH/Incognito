@@ -14,5 +14,3 @@ This basic rootkit works on the Linux operating system and is a loadable kernel 
   - Unhide itself
   - Protect against being unloaded by the user
   - Disable the unload protection
-
-# Resources
