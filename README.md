@@ -9,8 +9,7 @@ This basic rootkit works on the Linux operating system and is a loadable kernel 
   - Grant root privileges to a userland process
   - Hide process by PID
   - Unhide a previously hidden process by PID
-  - Hide files or directories by their name
-  - Unhide previously hidden files or directories
+  - Hide files or directories with the special prefix in their name
   - Hide itself
   - Unhide itself
   - Protect against being unloaded by the user
