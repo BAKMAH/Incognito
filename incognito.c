@@ -41,10 +41,6 @@
 #include <asm/uaccess.h> //we are dealing with most recent kernel
 #include <asm/unistd.h>
 
-
-
-#include "config.h"
-
 MODULE_LICENSE("GPL");
 
 int incognito_init(void);
