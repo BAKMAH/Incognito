@@ -81,7 +81,7 @@ In order to actually reveal Incognito, the following command must be used:
  ./command root
  ```
  No more need for pesky `sudo`, you have root! 
- **Note: The command handler root is unstable and usually roots `sh` which does nothing. I recommend using the raw command for root to get 100% consistency. 
+ **Note: The command handler root is unstable and usually roots `sh` which does nothing. I recommend using the raw command for root to get 100% consistency.** 
  
  We can also hide proccesses via their pid. We can do this by calling `ps` and picking a victim. If our victim's pid is `1234` we would  hide it with the command: 
  ```
