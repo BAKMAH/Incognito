@@ -4,7 +4,7 @@ A simple *yet classy* rootkit for simple *yet classy* folks.
 **Authors:** 
 Kordell Stewart, Suvaion Das, Alex Hassenbein  
 
-This basic rootkit works on the Linux operating system and is a loadable kernel module which when loaded into the kernel (by the attacker with root privileges) will do the following:
+This basic rootkit works on the Linux operating system and is a loadable kernel module which when loaded into the kernel will do the following:
 
   - Grant root privileges
   - Hide process by PID
