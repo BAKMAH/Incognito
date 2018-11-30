@@ -61,6 +61,7 @@ This will print off a help message listing the available commands. The command h
   hide [PID]        Toggles hiding the specified [PID].
   incognito         Toggles hiding and protection of the rootkit.
   root              Grants root privelege.
+  test              Loops the handler program to make an easy pid hiding target. 
 	
 ```
 To enter a command, type `./command [type chosen command here]`. 
@@ -85,7 +86,7 @@ In order to actually reveal Incognito, the following command must be used:
  ```
  ./command hide 1234
  ```
- Using `ps`, this process shouldn't show up anymore! Entering the above commadn again will unhide the process. 
+ Using `ps`, this process shouldn't show up anymore! Entering the above commadn again will unhide the process. The command handler has a test mode as well, that when executed makes it loop. Using `./command test` and then Ctrl+Z with `bg` we can throw it to the back and make it an easy process hiding target.
  
  At this point you can remove Incognito (provided it's revealed and protected!) with the command: 
  ```
