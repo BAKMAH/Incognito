@@ -59,8 +59,8 @@ This will print off a help message listing the available commands. The command h
   protect           Toggles rootkit removal protection.
   help              Shows this help menu in the terminal.
   hide [PID]        Toggles hiding the specified [PID].
-	incognito         Toggles hiding and protection of the rootkit.
-	root              Grants root privelege.
+  incognito         Toggles hiding and protection of the rootkit.
+  root              Grants root privelege.
 	
 ```
 To enter a command, type `./command [type chosen command here]`. 
