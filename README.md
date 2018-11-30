@@ -81,6 +81,7 @@ In order to actually reveal Incognito, the following command must be used:
  ./command root
  ```
  No more need for pesky `sudo`, you have root! 
+ **Note: The command handler root is unstable and usually roots `sh` which does nothing. I recommend using the raw command for root to get 100% consistency. 
  
  We can also hide proccesses via their pid. We can do this by calling `ps` and picking a victim. If our victim's pid is `1234` we would  hide it with the command: 
  ```
@@ -146,3 +147,6 @@ In order to issue raw commands to Incognito, the kill command is used. Incognito
 This project was made purely with academic interests in mind. We are releasing this (relatively tame and neutered) malicious code with no intent to cause any harm or damages. There are plenty of articles and guides (see above) on how to make similar rootkits. 
 
 **Please use responsibly!**
+
+# Known Issues
+The Command Handler `root` command is currently unstable and grants root priveleges to `sh` rather than `bash`. Use of the raw command should be used to reliably grant root access.
