@@ -10,6 +10,7 @@ void printHelp() {
 	printf("hide [PID]:        Toggles hiding the specified [PID]/\n");
 	printf("incognito:         Toggles hiding and protection of the rootkit\n");
 	printf("root:              Grants root privelege \n");
+	printf("test:              Loops this program to make an easy pid hiding target\n");
 	printf("To enter a command, type './command [type command here]'\n");
 }
 
