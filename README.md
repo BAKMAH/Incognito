@@ -16,8 +16,8 @@ This basic rootkit works on the Linux operating system and is a loadable kernel 
   - Disable the unload protection
   
  # Requirements 
- Created and tested on Distro: Ubuntu 18.04.1 LTS Kernel: 4.15.0-39-generic
- Will not function on Kernel versions 2.x or 3.x. 
+ Created and tested on Distro: Ubuntu 18.04.1 LTS Kernel: 4.15.0-39-generic.
+ *Will not function on Kernel versions 2.x or 3.x!* 
  
  # Installation 
  Check that you are running a compatible 4.x kernel. 
@@ -139,3 +139,8 @@ In order to issue raw commands to Incognito, the kill command is used. Incognito
 - http://www.ouah.org/LKM_HACKING.html
 - https://stackoverflow.com/questions/2103315/linux-kernel-system-call-hooking-example
 - http://books.gigatux.nl/mirror/networksecuritytools/0596007949/networkst-CHP-7-SECT-2.html
+
+# Disclaimer 
+This project was made purely with academic interests in mind. We are releasing this (relatively tame and neutered) malicious code with no intent to cause any harm or damages. There are plenty of articles and guides (see above) on how to make similar rootkits. 
+
+**Please use responsibly!**
