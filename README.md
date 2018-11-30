@@ -139,6 +139,7 @@ In order to issue raw commands to Incognito, the kill command is used. Incognito
 - http://www.ouah.org/LKM_HACKING.html
 - https://stackoverflow.com/questions/2103315/linux-kernel-system-call-hooking-example
 - http://books.gigatux.nl/mirror/networksecuritytools/0596007949/networkst-CHP-7-SECT-2.html
+- https://elixir.bootlin.com/linux/latest/source
 
 # Disclaimer 
 This project was made purely with academic interests in mind. We are releasing this (relatively tame and neutered) malicious code with no intent to cause any harm or damages. There are plenty of articles and guides (see above) on how to make similar rootkits. 
