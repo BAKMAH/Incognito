@@ -8,9 +8,9 @@ PWD := $(shell pwd)
 all: incognito command
 incognito:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
-	gcc -o command command_handler.c
+	gcc -o command command.c
 command:
-	gcc -o command command_handler.c
+	gcc -o command command.c
 endif
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
