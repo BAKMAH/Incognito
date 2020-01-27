@@ -1,7 +1,7 @@
 # Incognito
 A simple *yet classy* rootkit for simple *yet classy* folks. 
 
-**Authors:** 
+**Author:** 
 Kordell Stewart
 
 This basic rootkit works on the Linux operating system and is a loadable kernel module which when loaded into the kernel will do the following:
